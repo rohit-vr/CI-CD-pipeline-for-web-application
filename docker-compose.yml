@@ -1,19 +1,35 @@
 version: '3.8'
 services:
-  web:
-    build: .
-    container_name: web_app
+  jenkins:
+    image: jenkins/jenkins:lts
     ports:
-      - "8081:80"
+      - "8080:8080"  # Jenkins web interface
+      - "50000:50000"  # Jenkins agent port
     volumes:
-      - ./index.html:/usr/share/nginx/html/index.html
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow Jenkins to access Docker
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:80"  # Host port 8081 mapped to container port 80
+    depends_on:
+      - db
+
   db:
-    image: mysql:5.7
+    image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: webapp_db
-      MYSQL_USER: webapp_user
-      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: mydatabase
     ports:
-      - "3306:3306"
+      - "3306:3306"  # Host port 3306 mapped to container port 3306
+    volumes:
+      - db_data:/var/lib/mysql
 
+volumes:
+  jenkins_home:
+  db_data:
